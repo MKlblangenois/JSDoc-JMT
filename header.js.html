@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: header.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: header.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>class Swipe {
+   constructor(element) {
+      this.xDown = null;
+      this.yDown = null;
+      this.element = typeof(element) === 'string' ? document.querySelector(element) : element;
+
+      this.element.addEventListener('touchstart', function(evt) {
+         this.xDown = evt.touches[0].clientX;
+         this.yDown = evt.touches[0].clientY;
+      }.bind(this), false);
+   }
+
+   onLeft(callback) {
+      this.onLeft = callback;
+      return this;
+   }
+
+   onRight(callback) {
+      this.onRight = callback;
+      return this;
+   }
+
+   onUp(callback) {
+      this.onUp = callback;
+      return this;
+   }
+
+   onDown(callback) {
+      this.onDown = callback;
+      return this;
+   }
+
+   handleTouchMove(evt) {
+      if ( ! this.xDown || ! this.yDown )
+         return;
+
+      var xUp = evt.touches[0].clientX;
+      var yUp = evt.touches[0].clientY;
+
+      this.xDiff = this.xDown - xUp;
+      this.yDiff = this.yDown - yUp;
+        
+      if(Math.abs( this.xDiff ) + Math.abs( this.yDiff ) > 200) {
+         if ( Math.abs( this.xDiff ) > Math.abs( this.yDiff ) ) { // Most significant.
+            this.xDiff > 0 ? console.log('onLeft') /*this.onLeft()*/ : this.onRight();
+         } else {
+            this.yDiff > 0 ? console.log('onUp') /*this.onUp()*/ : console.log('onDown') /*this.onDown()*/;
+         }
+
+         // Reset values.
+         this.xDown = null;
+         this.yDown = null;
+      }
+   }
+
+   run() {
+      this.element.addEventListener('touchmove', function(evt) {
+         this.handleTouchMove(evt);
+      }.bind(this), false);
+   }
+}
+// .end class Swipe
+
+
+
+let currentBreakpoint;
+
+/**
+ * * Detect current breakpoint.
+ *
+ * ? Detect current breakpoint on each resize.
+ *
+ */
+
+const initBreakpoint = () => {
+   let innerWidth = window.innerWidth;
+
+   if(innerWidth >= 1240)
+      currentBreakpoint = 'desktop'
+   else if(innerWidth &lt; 1240 &amp;&amp; innerWidth >= 780)
+      currentBreakpoint = 'tablet'
+   else
+      currentBreakpoint = 'mobile'
+}
+
+initBreakpoint();
+window.addEventListener("resize", initBreakpoint);
+
+
+
+
+
+/**
+ * * Detect if click is outside element.
+ *
+ * ? Detect if click is outside a specific element
+ * ? and close it.
+ *
+ * @param {node}   element       Specific element to check.
+ * @param {event}  event         Get the fire event to get the target element.
+ *
+ *
+ * @return {null} Return nothing.
+ */
+const isClickedOutside = (element, event) => {
+   if(element.classList.contains('active-megadropdown')) {
+      if(!element.contains(event.target)) {
+         element.classList.remove('active-megadropdown');
+      }
+   }
+}
+
+if(currentBreakpoint == 'desktop' || currentBreakpoint == 'tablet') {
+
+   const closeOnOutside = [
+      document.querySelector('.megadropdown'),
+      document.querySelector('.nav-user-list'),
+      document.querySelector('.nav-user-account')
+   ]
+
+   document.addEventListener('click', function(event) {
+      closeOnOutside.forEach(element => {
+         isClickedOutside(element, event);
+      })
+   });
+}
+
+
+
+
+
+/**
+ * * Swipe Menu
+ *
+ * ? Swipe menu in the next view
+ * 
+ * @param : No params needed.
+ *
+ * @return {null} Return nothing.
+ */
+const swipeMenu = () => {
+   let mainMenuIndex = mainMenu.getAttribute('data-swiped');
+
+   if(mainMenuIndex > 3)
+      mainMenu.setAttribute('data-swiped', mainMenuIndex + 1);
+}
+
+
+/**
+ * * unSwipe Menu
+ *
+ * ? unSwipe menu in the previous view
+ * 
+ * @param : No params needed.
+ *
+ * @return {null} Return nothing.
+ */
+const unSwipeMenu = () => {
+   let mainMenuIndex = mainMenu.getAttribute('data-swiped');
+
+   if(mainMenuIndex > 0)
+      mainMenu.setAttribute('data-swiped', mainMenuIndex - 1);
+}
+
+
+
+
+// Start animation for nav
+// Get utils element
+const mainMenu = document.querySelector('.site-header__nav'),
+      toggleMenu = document.querySelector('#js-toggle-menu'),
+      targetElement = document.querySelector("body");
+
+// Click on toggle ⫢ Menu button
+if(toggleMenu &amp;&amp; mainMenu) {
+
+
+   // Au clic du bouton "= Menu"
+   toggleMenu.addEventListener('click', event => {
+      event.preventDefault();
+
+      mainMenuSwipeIndex = mainMenu.getAttribute('data-swiped');
+
+      // Si on est en mobile
+      if(currentBreakpoint === 'mobile') {
+         if(mainMenuSwipeIndex > 0) {
+            mainMenu.setAttribute('data-swiped', '0');
+            toggleMenu.classList.remove('active-button');
+            bodyScrollLock.enableBodyScroll(targetElement);
+         } else {
+            mainMenu.setAttribute('data-swiped', '1');
+            toggleMenu.classList.add('active-button');
+            bodyScrollLock.disableBodyScroll(targetElement);
+         }
+
+      // Sinon, c'est qu'on est en tablet, on affiche le menu de droite
+      } else {
+         mainMenu.setAttribute('data-swiped', '0');
+         activeMegaDropdown = document.querySelector('.active-megadropdown');
+         if(activeMegaDropdown) activeMegaDropdown.classList.remove('active-megadropdown');
+         mainMenu.classList.toggle('swiped-tablet-nav');
+         toggleMenu.classList.toggle('active-button');
+      }
+   })
+
+   // *
+   // Affichage du megadropdown 
+   // *
+   let megadropdownButton = document.querySelectorAll('.js-open-dropdown');
+
+   if(megadropdownButton != null) {
+      megadropdownButton.forEach(link => {
+         link.addEventListener('click', event => {
+            event.preventDefault();
+            
+            if(currentBreakpoint == 'desktop') {
+               let firstNav = mainMenu.querySelector('.megadropdown__content > div');
+               firstNav.classList.add('active-megadropdown-submenu');
+            }
+            
+            if(currentBreakpoint === 'tablet') {
+               mainMenu.classList.remove('swiped-tablet-nav');
+               toggleMenu.classList.remove('active-button');
+            }
+            
+            
+            // Si notre menu est déjà activé, on le désactive
+            if(link.nextElementSibling.classList.contains('active-megadropdown')
+               &amp;&amp; (currentBreakpoint === 'desktop' || currentBreakpoint === 'tablet')) {
+               link.nextElementSibling.classList.remove('active-megadropdown')
+            // Sinon
+            } else {
+               // S'il y a déjà un menu active, on le désactive
+               activeMegaDropdown = document.querySelector('.active-megadropdown');
+               if(activeMegaDropdown)
+                  activeMegaDropdown.classList.remove('active-megadropdown');
+
+               // On active notre menu en cours
+               nextMegaDropdown = link.nextElementSibling;
+               nextMegaDropdown.classList.add('active-megadropdown');
+               event.stopPropagation();
+
+               // Anime the menu
+               mainMenu.setAttribute('data-swiped', 2);
+            }
+         })
+      })
+   }
+
+   // For second menu
+   let megaDropdownLinks = document.querySelectorAll('.megadropdown > ul > li > button');
+
+   megaDropdownLinks.forEach(link => {
+      link.addEventListener('click', event => {
+         event.preventDefault();
+
+         // Find the current item
+         activeMenuItem = document.querySelector('.active-megadropdown-submenu');
+         if(activeMenuItem)
+            activeMenuItem.classList.remove('active-megadropdown-submenu');
+
+         nextMenuItem = document.getElementById(link.getAttribute('data-category-menu'));
+         nextMenuItem.classList.add('active-megadropdown-submenu');
+         
+         // Animate the menu
+         mainMenu.setAttribute('data-swiped', '3');
+      })
+   })
+
+   // *
+   // Action du retour en arrière
+   // *
+   let buttonsUnSwipe = document.querySelectorAll('.js-unswipe-one');
+   [].slice.call(buttonsUnSwipe).forEach(button => {
+      button.addEventListener('click', event => {
+         event.preventDefault();
+         unSwipeMenu();
+      })
+   })
+
+   const swipeBack = () => {
+      unSwipeMenu();
+   }
+
+   var swiper = new Swipe('.site-header__nav');
+   swiper.onRight(function() { swipeBack() });
+   swiper.run();
+}</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#initBreakpoint">initBreakpoint</a></li><li><a href="global.html#isClickedOutside">isClickedOutside</a></li><li><a href="global.html#swipeMenu">swipeMenu</a></li><li><a href="global.html#unSwipeMenu">unSwipeMenu</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Fri Oct 18 2019 11:28:04 GMT+0200 (heure d’été d’Europe centrale)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
